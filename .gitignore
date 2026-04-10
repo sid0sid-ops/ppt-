@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+.env
+dist/
+# Optional: If you want to force rebuilding CSS on every clone, exclude the build file
+# assets_global/css/tailwind-build.css

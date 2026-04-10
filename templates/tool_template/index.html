@@ -1,0 +1,43 @@
+<div id="tool-view-container" class="w-full h-full flex flex-col p-6 animate-fade-in">
+
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold tracking-tight text-bio-primary">Bio Tool UI</h1>
+        <button id="btnBackToWork" class="btn-primary flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Back to Workspace
+        </button>
+    </header>
+
+    <section id="tool-workspace" class="flex-grow grid grid-cols-12 gap-6 relative">
+
+        <!-- Config / Control Panel -->
+        <aside class="col-span-12 md:col-span-3 glass-panel p-4 flex flex-col gap-4">
+            <h2 class="text-xl font-semibold mb-2">Parameters</h2>
+            <div id="tool-controls" class="space-y-4">
+                <!-- Skeleton Loading Example (Toggle this via JS) -->
+                <div class="skeleton-state hidden">
+                    <div class="skeleton-text w-3/4"></div>
+                    <div class="skeleton-text w-1/2"></div>
+                    <div class="skeleton-text w-full"></div>
+                </div>
+
+                <!-- Actual Controls (Visible after load) -->
+                <div class="controls-content">
+                    <!-- Inputs go here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Visualization / Main output -->
+        <main class="col-span-12 md:col-span-9 glass-panel p-4 relative overflow-hidden flex flex-col">
+            <div id="canvas-container" class="flex-grow bg-gray-800/50 rounded-lg border border-gray-700 w-full h-full">
+                <!-- Dynamic rendering goes here -->
+            </div>
+        </main>
+
+    </section>
+
+</div>

@@ -1,0 +1,41 @@
+<div class="w-full h-full flex flex-col p-6 animate-fade-in">
+    <header class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold tracking-tight text-black dark:text-white">Presentation Dashboard</h1>
+        <div class="flex gap-4">
+            <button class="btn-secondary" onclick="window.location.hash='#presenter_view'">Open Presenter View</button>
+            <button class="btn-primary flex items-center gap-2" onclick="window.location.hash='#presentation_stage'">
+                <i class="fa-solid fa-play"></i> Start Full Presentation
+            </button>
+        </div>
+    </header>
+
+    <section class="flex-grow grid grid-cols-12 gap-6 relative">
+        <!-- Left Sidebar: Slides List -->
+        <aside class="col-span-12 md:col-span-3 glass-panel p-4 flex flex-col gap-4 overflow-y-auto"
+            style="max-height: calc(100vh - 150px);">
+            <h2 class="text-xl font-semibold mb-2 text-black dark:text-white border-b border-border pb-2">Slide Pipeline
+            </h2>
+            <div id="slide-thumbnails-container" class="flex flex-col gap-3">
+                <!-- Javascript Injected -->
+                <div class="text-muted text-sm italic">Loading slides...</div>
+            </div>
+        </aside>
+
+        <!-- Main Preview Window -->
+        <main
+            class="col-span-12 md:col-span-9 glass-panel p-6 relative overflow-hidden flex flex-col items-center justify-center">
+
+            <div class="w-full mb-4 flex justify-between items-center text-sm font-semibold text-muted tracking-wide">
+                <span>PREVIEW WINDOW</span>
+                <span id="preview-slide-indicator">Slide 1/14</span>
+            </div>
+
+            <!-- Slide preview wrapper (16:9 box) -->
+            <div id="dashboard-main-preview"
+                class="w-full max-w-[1200px] aspect-video border border-border shadow-2xl relative overflow-hidden bg-background">
+                <!-- Javascript will inject the raw HTML slide data right here -->
+            </div>
+
+        </main>
+    </section>
+</div>

@@ -1,0 +1,142 @@
+@layer components {
+
+    /* ====================================================
+     PREMIUM GLASSMORPHISM SYSTEM
+     ==================================================== */
+    .glass-panel {
+        @apply bg-surface/60 backdrop-blur-xl border border-white/20 dark:border-white/5 shadow-lg rounded-2xl;
+        /* Hardware acceleration to prevent repaint lags on scroll */
+        transform: translateZ(0);
+    }
+
+    .glass-card {
+        @apply bg-surface/40 backdrop-blur-md border border-white/10 dark:border-white/5 shadow-md rounded-xl;
+        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out-expo), background 0.4s ease;
+    }
+
+    /* Interaction rules */
+    .glass-card:hover {
+        @apply bg-surface/60 shadow-xl;
+        transform: translateY(-4px);
+    }
+
+    /* ====================================================
+     FLEXBOX & GRID ABSTRACTIONS (COMPLEX LAYOUTS)
+     ==================================================== */
+    /* Centralize single elements securely */
+    .flex-center {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Spread edge to edge */
+    .flex-between {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    /* Ultimate dynamic wrapping Grid (no media queries required) */
+    .grid-auto-fit {
+        display: grid;
+        /* Uses fluid minimum spanning down safely */
+        grid-template-columns: repeat(auto-fit, minmax(clamp(250px, 30vw, 350px), 1fr));
+        gap: var(--space-6);
+    }
+
+    /* ====================================================
+     INTERACTIVE HOVER STATES (BUTTONS)
+     ==================================================== */
+    .btn-primary {
+        @apply px-5 py-2.5 bg-bio-primary text-white rounded-lg font-medium relative overflow-hidden;
+        transition: transform 0.3s var(--ease-spring), background-color 0.3s;
+    }
+
+    .btn-primary:hover {
+        @apply bg-blue-600;
+        transform: scale(1.02);
+        /* Mild spring scale out */
+    }
+
+    .btn-primary:active {
+        transform: scale(0.97);
+        /* Mild spring compress */
+    }
+
+    /* ====================================================
+     SKELETON LOADING SYSTEM
+     ==================================================== */
+    .skeleton {
+        @apply bg-surface/10 rounded-lg animate-skeleton;
+        pointer-events: none;
+    }
+
+    .skeleton-text {
+        @apply skeleton h-4 w-full mb-2;
+    }
+
+    .skeleton-circle {
+        @apply skeleton rounded-full;
+    }
+
+    /* ====================================================
+     PREMIUM MOTION SYSTEM — CSS COMPANIONS
+     Works together with assets_global/js/features/cursor.js
+     ==================================================== */
+
+    /* 
+     SPOTLIGHT BLOB — rendered by JS (cursor.js).
+     Control the blob size & tint here if you need to override.
+    */
+    #cursor-blob {
+        will-change: transform;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /*
+     HOVER GLOW [data-glow] — JS injects the glow-layer div inside.
+     Set the default glow color via data attribute:
+       <div data-glow="rgba(59,130,246,0.25)">
+
+     This class ensures the card itself allows z-stacking.
+    */
+    [data-glow] {
+        isolation: isolate;
+    }
+
+    [data-glow] .glow-layer {
+        pointer-events: none;
+        z-index: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    /*
+     MAGNETIC [data-magnetic] — JS handles transform via rAF lerp.
+     This ensures NO CSS transition fights with JS transform.
+     On leave → JS sets transition once, springs back.
+    */
+    [data-magnetic] {
+        will-change: transform;
+        transform-style: preserve-3d;
+    }
+
+    /*
+     HOVER GLOW CARD VARIANT — convenience class.
+     Add to any card element for glow + lift:
+       <div class="glow-card" data-glow="rgba(16,185,129,0.2)">
+    */
+    .glow-card {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        border-radius: 1rem;
+        transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out-expo);
+    }
+
+    .glow-card:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+}

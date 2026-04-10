@@ -1,0 +1,144 @@
+/* ====================================================
+   APPLE-LEVEL ANIMATIONS (GPU ACCELERATED & SMOOTH)
+   ==================================================== */
+
+/* RULE: Only animate opacity and transform for 60fps locking. */
+
+.animate-fade-in {
+    /* Usage: Entry of new views or massive blocks */
+    animation: fadeIn 0.6s var(--ease-out-expo) forwards;
+}
+
+.animate-slide-up {
+    /* Usage: Modals, popups, command palettes */
+    opacity: 0;
+    animation: slideUp 0.6s var(--ease-spring) forwards;
+}
+
+.animate-scale-in {
+    /* Usage: Notifications, tooltips, tight cards */
+    opacity: 0;
+    animation: scaleIn 0.5s var(--ease-spring) forwards;
+}
+
+.animate-pulse-glow {
+    /* Usage: Indication that service is running or critical action */
+    animation: pulseGlow 3s infinite alternate var(--ease-smooth);
+}
+
+.animate-motto {
+    /* Step 1: Fade in first, then shimmer starts after 1.5s delay */
+    animation:
+        fadeIn 1.2s var(--ease-out-expo) forwards,
+        shimmer 3.5s infinite linear 1.5s;
+    /* ~3-4s = PREMIUM / not flashy */
+    opacity: 0;
+
+    /* ====================================================
+       SHIMMER ENGINE (100% CSS — JS not required)
+       How it works:
+       1. text-fill-color: transparent  -> hides the original text color
+       2. background-clip: text         -> gradient clips to text shape only
+       3. background-position animates  -> creates the "light moving" illusion
+       ==================================================== */
+
+    /* Light color = white for DARK mode, slightly darker muted for LIGHT mode */
+    background: linear-gradient(105deg,
+            /* slight tilt = more realistic light */
+            rgb(var(--muted) / 0.6) 0%,
+            /* base color: dim */
+            rgb(var(--muted) / 0.75) 38%,
+            /* pre-shine ramp */
+            #ffffff 50%,
+            /* SHINE POINT: pure white */
+            rgb(var(--muted) / 0.75) 62%,
+            /* post-shine ramp */
+            rgb(var(--muted) / 0.6) 100%
+            /* base color: dim */
+        );
+    background-size: 300% auto;
+    /* wide enough so sweep is slow and smooth */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* Keyframes mapped exactly ensuring translateZ(0) pushes it to hardware compositor */
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}
+
+@keyframes slideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) translateZ(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) translateZ(0);
+    }
+}
+
+@keyframes scaleIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateZ(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateZ(0);
+    }
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 15px 0 rgba(59, 130, 246, 0.4);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+}
+
+@keyframes skeletonLoading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.animate-skeleton {
+    background: linear-gradient(90deg,
+            rgba(var(--surface), 0.1) 25%,
+            rgba(var(--surface), 0.3) 50%,
+            rgba(var(--surface), 0.1) 75%);
+    background-size: 200% 100%;
+    animation: skeletonLoading 1.5s infinite linear;
+}

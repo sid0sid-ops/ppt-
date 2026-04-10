@@ -1,0 +1,16 @@
+{
+  "name": "bioalign-pro-engine",
+  "version": "1.0.0",
+  "description": "Production-level modular SPA web application framework.",
+  "scripts": {
+    "dev": "npx concurrently \"npm run tailwind:watch\" \"npm run serve\"",
+    "build": "npx tailwindcss -i ./assets_global/css/base.css -o ./assets_global/css/tailwind-build.css --minify",
+    "tailwind:watch": "npx tailwindcss -i ./assets_global/css/base.css -o ./assets_global/css/tailwind-build.css --watch",
+    "serve": "npx http-server -c-1 -p 8080"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "tailwindcss": "^3.4.1",
+    "http-server": "^14.1.1"
+  }
+}
