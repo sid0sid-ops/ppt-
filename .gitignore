@@ -4,5 +4,22 @@ Thumbs.db
 *.log
 .env
 dist/
+
+# Editor and IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Local Development & Large Source Files
+*.pptx
+*.ppt
+*.pdf
+extracted_slides.txt
+
 # Optional: If you want to force rebuilding CSS on every clone, exclude the build file
 # assets_global/css/tailwind-build.css

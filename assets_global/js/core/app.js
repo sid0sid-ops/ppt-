@@ -3,6 +3,7 @@ import { initFullscreen } from '../features/fullscreen.js';
 import { initKeyboardHooks } from '../features/keyboard.js';
 import { initCursorSystem } from '../features/cursor.js';
 import { PresentationEngine } from './presentationEngine.js';
+import { CinematicTunnel } from '../features/cinematicTunnel.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Core System Services
@@ -14,6 +15,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Boot Zero-Latency Presentation Engine
     window.engine = new PresentationEngine();
     window.engine.init();
+
+    // Boot Cinematic Tunnel (Disabled to use static molecular background)
+    // window.tunnel = new CinematicTunnel(document.getElementById('view-stage'));
+    // window.tunnel.init();
 
     console.log("BioAlign-Pro Engine Initialized");
 });

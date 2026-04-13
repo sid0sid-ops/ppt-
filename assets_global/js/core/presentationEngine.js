@@ -1,4 +1,4 @@
-import { SLIDES } from '../features/content.js';
+import { slidesData as SLIDES } from '../features/content.js';
 
 export class PresentationEngine {
     constructor() {
@@ -34,6 +34,26 @@ export class PresentationEngine {
                 }
             } else if (e.data.action === 'EXIT') {
                 this.exitPresentation(false);
+            } else if (e.data.action === 'THEME') {
+                if (e.data.isDark) document.documentElement.classList.add('dark');
+                else document.documentElement.classList.remove('dark');
+
+                const themeIcons = document.querySelectorAll('.themeIcon');
+                themeIcons.forEach(icon => {
+                    if (e.data.isDark) {
+                        icon.classList.remove('fa-moon');
+                        icon.classList.add('fa-sun');
+                    } else {
+                        icon.classList.remove('fa-sun');
+                        icon.classList.add('fa-moon');
+                    }
+                });
+            } else if (e.data.action === 'ZOOM_IMG') {
+                // Open zoom for specific figure number (from other window/view)
+                this._applyZoom(e.data.num);
+            } else if (e.data.action === 'ZOOM_CLOSE') {
+                // Close whatever zoom is open
+                this._closeZoom();
             }
         };
 
@@ -68,14 +88,20 @@ export class PresentationEngine {
         if (thumbContainer) {
             thumbContainer.innerHTML = SLIDES.map((slide, index) => {
                 const isActive = index === this.currentIndex;
+                // Memory-friendly thumbnail: NO full HTML injection — just slide number, title, and a micro color swatch
+                const accentColor = isActive ? '#3b82f6' : '#94a3b8';
                 return `
-                <div class="slide-thumb-item cursor-pointer flex flex-col gap-1 p-2 rounded-lg transition-colors border ${isActive ? 'bg-black/5 dark:bg-white/10 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}" onclick="window.engine.setSlide(${index})">
+                <div class="slide-thumb-item cursor-pointer flex flex-col gap-1 p-2 rounded-lg transition-colors border ${isActive ? 'bg-black/5 dark:bg-white/10 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : 'border-transparent hover:bg-black/5 dark:hover:bg-white/5'}" onclick="window.engine.handleThumbClick(${index})">
                     <div class="flex items-center gap-2 mb-1">
                         <span class="text-xs font-bold text-muted">${index + 1}</span>
                         <span class="text-xs font-semibold truncate text-black dark:text-white" title="${slide.title}">${slide.title}</span>
                     </div>
-                    <div class="w-full aspect-video border border-border bg-black/5 dark:bg-black relative overflow-hidden flex items-center justify-center">
-                        <img src="./ppt/assets/thumb_${index + 1}.webp" class="w-full h-full object-cover opacity-90 transition-opacity hover:opacity-100" onerror="this.outerHTML='<span class=\\'text-[10px] text-muted font-bold tracking-widest\\'>THUMB_${index + 1}</span>'" alt="Slide ${index + 1} Thumbnail" />
+                    <div class="w-full aspect-video border border-border rounded-md relative overflow-hidden flex items-center justify-center" style="background:linear-gradient(135deg,#f0f4ff,#e8f0fe);">
+                        <div class="absolute inset-0 flex flex-col justify-center items-center gap-1 px-2">
+                            <div class="w-8 h-1 rounded-full mb-1" style="background:${accentColor};opacity:0.7;"></div>
+                            <p class="text-[9px] font-semibold text-center leading-tight text-slate-600 line-clamp-3">${slide.title}</p>
+                            <span class="text-[8px] font-bold text-slate-400 mt-1">SLIDE ${index + 1}</span>
+                        </div>
                     </div>
                 </div>
                 `;
@@ -83,6 +109,13 @@ export class PresentationEngine {
         }
 
         this.renderDashboardPreview(this.currentIndex);
+
+        setTimeout(() => {
+            const activeThumb = document.querySelector('.slide-thumb-item.border-blue-500');
+            if (activeThumb) {
+                activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 10);
     }
 
     prepareStageDOM() {
@@ -113,10 +146,10 @@ export class PresentationEngine {
             document.body.classList.remove('bg-black');
         } else if (viewName === 'stage') {
             this.viewStage.classList.remove('hidden');
-            document.body.classList.add('bg-black');
+            document.body.classList.remove('bg-black'); // Retain cinematic global background
         } else if (viewName === 'presenter') {
             this.viewPresenter.classList.remove('hidden');
-            document.body.classList.add('bg-[#1a1a1a]');
+            document.body.classList.add('bg-[#1a1a1a]'); // Dim background for presenter HUD
         }
     }
 
@@ -125,6 +158,9 @@ export class PresentationEngine {
     enterStage() {
         this.prepareStageDOM();
         const stageEl = this.viewStage;
+
+        // Ensure 3D viewport matches full screen correctly after display logic
+        setTimeout(() => { if (window.tunnel) window.tunnel.onResize(); }, 10);
 
         const requestFS = () => {
             if (stageEl.requestFullscreen) return stageEl.requestFullscreen();
@@ -221,12 +257,134 @@ export class PresentationEngine {
         }
     }
 
+    toggleZoom(num) {
+        const existing = document.getElementById('ppt-zoom-overlay');
+        const currentNum = existing ? existing.dataset.zoomNum : null;
+
+        if (existing) {
+            existing.remove();
+            // If clicking the SAME image → just close
+            if (currentNum === String(num)) {
+                this.broadcastChannel.postMessage({ action: 'ZOOM_CLOSE' });
+                return;
+            }
+            // Clicking a DIFFERENT image while one is open → close old, open new
+        }
+
+        // Open zoom for this image
+        this.broadcastChannel.postMessage({ action: 'ZOOM_IMG', num: num });
+        this._applyZoom(num);
+    }
+
+    _applyZoom(num) {
+        // Remove any existing overlay
+        const old = document.getElementById('ppt-zoom-overlay');
+        if (old) old.remove();
+
+        // ── Find the right container to mount inside ────────────────────
+        // Must be the ACTIVE visible view so the overlay stays inside the slide canvas
+        let mountTarget =
+            (!this.viewStage.classList.contains('hidden') ? this.viewStage : null) ||
+            (!this.viewPresenter.classList.contains('hidden') ? this.viewPresenter : null) ||
+            document.body;
+
+        // Make sure it's position:relative so absolute children work correctly
+        if (mountTarget !== document.body && getComputedStyle(mountTarget).position === 'static') {
+            mountTarget.style.position = 'relative';
+        }
+
+        // ── Source image ─────────────────────────────────────────────────
+        const srcImg = document.querySelector(`.ppt-img-smart[src*="Figure%20${num}"]`)
+            || document.querySelector(`img[alt*="Figure ${num}"]`);
+        const imgSrc = srcImg ? srcImg.src : `./ppt/assets/Figure%20${num}.jpg`;
+        const imgAlt = srcImg ? srcImg.alt : `Figure ${num}`;
+
+        // ── Keyframe (inject once) ────────────────────────────────────────
+        if (!document.getElementById('ppt-zoom-keyframe')) {
+            const ks = document.createElement('style');
+            ks.id = 'ppt-zoom-keyframe';
+            ks.textContent = `
+                @keyframes pptZoomIn  { from { opacity:0; transform:scale(0.88); } to { opacity:1; transform:scale(1); } }
+                @keyframes pptZoomOut { from { opacity:1; transform:scale(1);    } to { opacity:0; transform:scale(0.88); } }
+            `;
+            document.head.appendChild(ks);
+        }
+
+        // ── Build overlay ─────────────────────────────────────────────────
+        const overlay = document.createElement('div');
+        overlay.id = 'ppt-zoom-overlay';
+        overlay.dataset.zoomNum = String(num);
+        // position:absolute so it fills the STAGE container, not the whole browser
+        overlay.style.cssText = [
+            'position:absolute', 'inset:0', 'z-index:9000',
+            'background:rgba(6,6,18,0.93)',
+            'backdrop-filter:blur(22px)', '-webkit-backdrop-filter:blur(22px)',
+            'display:flex', 'flex-direction:column',
+            'align-items:center', 'justify-content:center',
+            'cursor:zoom-out', 'padding:3% 4%', 'box-sizing:border-box',
+            'animation:pptZoomIn .22s cubic-bezier(.22,1,.36,1) both'
+        ].join(';');
+
+        const img = document.createElement('img');
+        img.src = imgSrc;
+        img.alt = imgAlt;
+        img.style.cssText = [
+            'max-width:100%',
+            'max-height:85%',
+            'width:auto', 'height:auto',
+            'object-fit:contain',
+            'border-radius:0',
+            'pointer-events:none',
+            'box-shadow:0 30px 80px rgba(0,0,0,0.7)'
+        ].join(';');
+
+        const hint = document.createElement('p');
+        hint.style.cssText = 'margin-top:16px;font-size:0.65rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:rgba(255,255,255,0.35);pointer-events:none;';
+        hint.textContent = 'Click anywhere to close';
+
+        overlay.appendChild(img);
+        overlay.appendChild(hint);
+
+        const close = () => {
+            const o = document.getElementById('ppt-zoom-overlay');
+            if (o) o.remove();
+            this.broadcastChannel.postMessage({ action: 'ZOOM_CLOSE' });
+        };
+        overlay.addEventListener('click', close);
+
+        mountTarget.appendChild(overlay);
+    }
+
+    _closeZoom() {
+        const o = document.getElementById('ppt-zoom-overlay');
+        if (o) o.remove();
+    }
+
+    handleThumbClick(index) {
+        const now = Date.now();
+        // Emulate native double-click regardless of DOM recreation
+        if (this.lastClickIndex === index && (now - (this.lastClickTime || 0) < 500)) {
+            // Double click: open slideshow
+            this.enterStage();
+        } else {
+            // Single click: just preview
+            this.setSlide(index);
+        }
+        this.lastClickIndex = index;
+        this.lastClickTime = now;
+    }
+
     setSlide(index) {
         if (index >= 0 && index < SLIDES.length) {
             this.currentIndex = index;
             sessionStorage.setItem('bio_ppt_slide', this.currentIndex);
             this.syncAllViews();
             this.broadcastChannel.postMessage({ action: 'NAVIGATE', index: this.currentIndex });
+
+            // Sync Cinematic Pipeline Timeline
+            if (window.tunnel) {
+                window.tunnel.navigateTo(this.currentIndex, SLIDES.length);
+            }
         }
     }
 
@@ -245,9 +403,12 @@ export class PresentationEngine {
         if (!preview || !slide) return;
 
         indicator.innerText = `Slide ${index + 1} / ${SLIDES.length}`;
+        // Live HTML preview — no thumbnails needed
         preview.innerHTML = `
-            <div class="w-full h-full flex items-center justify-center p-4">
-                <img src="./ppt/assets/thumb_${index + 1}.webp" class="max-w-full max-h-full object-contain rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.5)] border border-white/10" alt="Preview of Slide ${index + 1}" onerror="this.outerHTML='<div class=\\'w-full h-full flex items-center justify-center text-gray-500 bg-[#060410] rounded-xl border border-white/10\\'>Missing Thumbnail File: thumb_${index + 1}.webp</div>'"/>
+            <div class="w-full h-full relative overflow-hidden rounded-xl" style="background:rgba(255,255,255,0.92);">
+                <div class="absolute inset-0" style="transform-origin:top left; transform:scale(0.315); width:317.5%; height:317.5%; pointer-events:none;">
+                    ${this.getSlideHTML(slide, 'preview')}
+                </div>
             </div>
         `;
 
@@ -281,7 +442,11 @@ export class PresentationEngine {
         if (nextSlide && nextPreviewContainer) {
             nextPreviewLabel.innerText = "Next slide";
             nextPreviewContainer.innerHTML = `
-                <img src="./ppt/assets/thumb_${index + 2}.webp" class="w-full h-full object-cover rounded-lg" alt="HUD Next Slide ${index + 2}" onerror="this.outerHTML='<div class=\\'text-gray-600 bg-black w-full h-full flex items-center justify-center text-xs border border-white/10 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.5)]\\'>Waiting on Slide ${index + 2} thumb...</div>'"/>
+                <div class="w-full h-full relative overflow-hidden rounded-lg" style="background:rgba(255,255,255,0.9);">
+                    <div class="absolute inset-0" style="transform-origin:top left;transform:scale(0.22);width:454.5%;height:454.5%;pointer-events:none;">
+                        ${this.getSlideHTML(nextSlide, 'preview')}
+                    </div>
+                </div>
             `;
         } else if (nextPreviewContainer) {
             nextPreviewLabel.innerText = "End of slide show";
@@ -296,8 +461,8 @@ export class PresentationEngine {
         let contentHtml = slide.htmlContent;
         if (!contentHtml) {
             contentHtml = `
-                <div class="absolute inset-0 bg-[#060410] flex items-center justify-center">
-                    <div class="flex flex-col h-full w-full justify-center items-center text-center p-20 max-w-6xl mx-auto glass-panel">
+                <div class="absolute inset-0 bg-transparent flex items-center justify-center pointer-events-none">
+                    <div class="flex flex-col h-full w-full justify-center items-center text-center p-20 max-w-6xl mx-auto glass-panel pointer-events-auto">
                         <h1 class="text-6xl md:text-8xl font-bold mb-12 font-serif leading-tight text-white">${slide.title}</h1>
                         <ul class="text-3xl md:text-4xl text-left list-disc list-inside space-y-6 text-gray-300">
                             ${slide.content.map(c => `<li>${c}</li>`).join('')}
@@ -309,12 +474,20 @@ export class PresentationEngine {
         const events = context === 'stage' ? '' : 'pointer-events-none';
 
         return `
+            <style>
+                @keyframes cinematicPop {
+                    0% { opacity: 0; transform: scale(0.92) translateY(20px) translateZ(0); filter: blur(10px); }
+                    100% { opacity: 1; transform: scale(1) translateY(0px) translateZ(0); filter: blur(0px); }
+                }
+            </style>
             <div class="slide-wrapper" style="
                 position: absolute; inset: 0;
                 width: 100%; height: 100%;
-                background: #000;
+                background: transparent;
                 display: flex; align-items: center; justify-content: center;
                 overflow: hidden;
+                opacity: 0;
+                animation: cinematicPop 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             ">
                 <div class="slide-canvas" style="
                     position: absolute;
@@ -322,7 +495,7 @@ export class PresentationEngine {
                     transform-origin: center center;
                     top: 50%; left: 50%;
                     transform: translate(-50%, -50%) scale(1);
-                    background: #060410;
+                    background: transparent;
                     overflow: hidden;
                     ${events ? 'pointer-events: none;' : ''}
                 ">
@@ -379,11 +552,11 @@ export class PresentationEngine {
                 this.enterStage();
             }
 
-            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 this.setSlide(this.currentIndex + 1);
             }
-            if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            if (e.key === 'ArrowLeft' || e.key === 'PageUp' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 this.setSlide(this.currentIndex - 1);
             }
@@ -397,16 +570,19 @@ export class PresentationEngine {
         document.addEventListener('fullscreenchange', () => {
             // If no element is fullscreen but Stage is still showing, user exited via browser Esc
             if (!document.fullscreenElement) {
-                if (!this.viewStage.classList.contains('hidden') || !this.viewPresenter.classList.contains('hidden')) {
-                    this.exitPresentation(false); // false = don't broadcast again; just clean up locally
+                if (!this.viewStage.classList.contains('hidden')) {
+                    // True project window or full screen stage
+                    // If window.name === 'Projector', it MUST broadcast to tell HUD to close.
+                    // If it's single-screen stage, it can also broadcast (harmless).
+                    this.exitPresentation(true);
                 }
             }
         });
         // Cross-browser support
         document.addEventListener('webkitfullscreenchange', () => {
             if (!document.webkitFullscreenElement) {
-                if (!this.viewStage.classList.contains('hidden') || !this.viewPresenter.classList.contains('hidden')) {
-                    this.exitPresentation(false);
+                if (!this.viewStage.classList.contains('hidden')) {
+                    this.exitPresentation(true);
                 }
             }
         });

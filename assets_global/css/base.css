@@ -17,6 +17,17 @@
     /* slate-500 */
 
     /* ====================================================
+       PRESENTATION SLIDE THEME (Centrally managed colors)
+       ==================================================== */
+    --ppt-title: #ffffff;
+    --ppt-text-muted: #cbd5e1;
+    /* slate-300 */
+    --ppt-accent-main: #38bdf8;
+    /* sky-400 */
+    --ppt-accent-sec: #818cf8;
+    /* indigo-400 */
+
+    /* ====================================================
        FLUID TYPOGRAPHY (CLAMP SYSTEM) - RESPONSIVE FIRST
        Auto-scales smoothly. No media queries needed!
        ==================================================== */
@@ -49,10 +60,10 @@
     /* ====================================================
        DARK MODE OVERRIDES
        ==================================================== */
-    --background: 15 23 42;
-    /* slate-900 */
-    --surface: 30 41 59;
-    /* slate-800 */
+    --background: 0 0 0;
+    /* Pitch Black */
+    --surface: 0 0 0;
+    /* Pitch Black */
     --border: 51 65 85;
     /* slate-700 */
     --muted: 148 163 184;
@@ -91,4 +102,74 @@
   ::-webkit-scrollbar-thumb:hover {
     background: rgba(var(--muted), 0.8);
   }
+}
+
+/* ====================================================
+   STATIC LIGHT THEME FOR PRESENTATION SLIDES
+   ==================================================== */
+.ppt-bg-glass {
+  background-color: #ffffff !important;
+  backdrop-filter: blur(35px) !important;
+  -webkit-backdrop-filter: blur(35px) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.7) !important;
+}
+
+.ppt-text-main {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+.ppt-text-muted {
+  color: #334155 !important;
+}
+
+.ppt-text-muted strong,
+.ppt-text-main strong {
+  color: #0f172a !important;
+}
+
+.ppt-img-smart {
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+.ppt-caption-glass {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  color: #1e293b !important;
+}
+
+.ppt-inner-box {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #334155 !important;
+}
+
+/* ====================================================
+   PRESENTER HUD — SPEAKER NOTES SCROLLBAR
+   ==================================================== */
+.hud-notes-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3b82f6 rgba(100, 116, 139, 0.15);
+}
+
+.hud-notes-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.hud-notes-scroll::-webkit-scrollbar-track {
+  background: rgba(100, 116, 139, 0.1);
+  border-radius: 999px;
+}
+
+.hud-notes-scroll::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+
+.hud-notes-scroll::-webkit-scrollbar-thumb:hover {
+  background: #6366f1;
 }
